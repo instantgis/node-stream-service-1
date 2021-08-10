@@ -44,3 +44,5 @@ interface FeatureResult {
 ```
 
 Due to the lack of metadata document, such metadata must be specified when the associated StreamLayer is created on the client (see example.html). 
+
+## Modify for Ayyeka demo
