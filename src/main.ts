@@ -2,6 +2,7 @@ import WebSocket, { Server, ServerOptions,  } from "ws";
 import * as readline from "readline"
 import { MockService, FeatureSet, Polyline } from "./MockService";
 import fetch from "node-fetch";
+import { AyyekaService } from "./AyyekaService";
 
 type Message = string | Buffer | ArrayBuffer | Buffer[];
 
@@ -22,7 +23,7 @@ interface IHandshakeMessage {
   outFields?: string[]
 }
 
-const BROADCAST_INTERVAL = 100
+const BROADCAST_INTERVAL = 5000
 
 class StreamServer extends Server {
   constructor(options: ServerOptions & StreamServerOptions) {
@@ -113,14 +114,30 @@ async function main(): Promise<void> {
     output: process.stdout
   });
 
-  const mockService = new MockService({});
-  const data = await fetchPolylines();
-
-  mockService.initialize(data);
+  const csvService = new AyyekaService();
+  csvService.start( './csv/sample.csv');
+  csvService
+    .on( 'ready', (feature) => {
+      if (feature) {
+        console.log(feature);
+        const message = JSON.stringify({
+          type: "featureResult",
+          features: [feature]
+        });
+        console.log(message);
+      // csvService.next();
+      }
+    })
+    .on( 'end', () => {
+      console.log('CSV stream ended');
+    })
+    .on('error', () => {
+      console.log('CSV error');
+    });
 
   const intervalId = setInterval(() => {
-    const message = mockService.next();
-    server.broadcast(message);
+    csvService.next();
+    // server.broadcast(message);
   }, BROADCAST_INTERVAL);
 
   console.log("Started listening on port 8000");
